@@ -1,0 +1,34 @@
+#!/usr/bin/env bash
+
+set -o errexit
+set -o nounset
+set -o pipefail
+
+readonly BINARY_NAME="fx"
+readonly DOWNLOAD_BASE_URL="https://github.com/antonmedv/fx/releases/download"
+
+download_release() {
+  local -r version="$1"
+  local -r download_dir="$2"
+  local -r platform="$(uname | tr '[:upper:]' '[:lower:]')_amd64"
+  local -r url="${DOWNLOAD_BASE_URL}/${version}/${BINARY_NAME}_${platform}"
+  local -r output_path="${download_dir}/${BINARY_NAME}"
+
+  mkdir -p "$download_dir"
+
+  echo "Downloading ${BINARY_NAME} ${version} from ${url}"
+  curl -fL -o "$output_path" "$url" || return 1
+}
+
+main() {
+  local -r version="${ASDF_INSTALL_VERSION:-}"
+  local -r download_dir="${ASDF_DOWNLOAD_PATH:-}"
+
+  [[ -z "${version}" ]] && error_exit "ASDF_INSTALL_VERSION is not set"
+  [[ -z "${download_dir}" ]] && error_exit "ASDF_DOWNLOAD_PATH is not set"
+
+  download_release "$version" "$download_dir" \
+    || error_exit "Could not download ${BINARY_NAME} ${version}"
+}
+
+main "$@"
